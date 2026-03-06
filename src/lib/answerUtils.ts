@@ -31,6 +31,7 @@ function normalizeAnswer(raw: string): string {
       /^(what (is|are|was|were)|who (is|are|was|were)|where (is|are|was|were))\s+/i,
       ""
     ) // strip Jeopardy phrasing
+    .replace(/\s*&\s*/g, " and ")    // & → and (before lowercasing strips it)
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ") // non-alphanumeric → space
     .replace(/\b(a|an|the)\b/g, " ") // strip articles
