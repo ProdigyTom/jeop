@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --jeopardy-blue: #060CE9;
+  --jeopardy-blue-dark: #040a9e;
+  --jeopardy-gold: #FFD700;
+  --jeopardy-gold-dark: #c8a800;
+  --background: #060CE9;
+  --foreground: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-jeopardy-blue: var(--jeopardy-blue);
+  --color-jeopardy-blue-dark: var(--jeopardy-blue-dark);
+  --color-jeopardy-gold: var(--jeopardy-gold);
+  --color-jeopardy-gold-dark: var(--jeopardy-gold-dark);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
