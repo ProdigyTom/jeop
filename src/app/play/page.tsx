@@ -7,7 +7,7 @@ import { checkAnswer, stripHtml, type MatchType } from "@/lib/answerUtils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type GameState = "loading" | "question" | "feedback" | "results";
+type GameState = "loading" | "reveal" | "question" | "feedback" | "results";
 
 interface Clue {
   id: number;
@@ -125,7 +125,7 @@ export default function PlayPage() {
       if (!res.ok) throw new Error("Failed to load category");
       const data: Category = await res.json();
       setCategory(data);
-      setGameState("question");
+      setGameState("reveal");
     } catch {
       setError("Could not load a category. Please try again.");
     }
@@ -134,6 +134,24 @@ export default function PlayPage() {
   useEffect(() => {
     loadCategory();
   }, [loadCategory]);
+
+  // Category reveal: count down 3→2→1 then start
+  const [revealCount, setRevealCount] = useState(3);
+  useEffect(() => {
+    if (gameState !== "reveal") return;
+    setRevealCount(3);
+    const interval = setInterval(() => {
+      setRevealCount((n) => {
+        if (n <= 1) {
+          clearInterval(interval);
+          setGameState("question");
+          return 0;
+        }
+        return n - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [gameState]);
 
   // Focus input whenever a new question is shown
   useEffect(() => {
@@ -206,6 +224,50 @@ export default function PlayPage() {
 
   const totalQuestions = category?.clues.length ?? 0;
   const currentClue = category?.clues[currentIndex];
+
+  // ─── Category Reveal ─────────────────────────────────────────────────────
+
+  if (gameState === "reveal" && category) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center px-6 text-center"
+        style={{ backgroundColor: "#060CE9" }}
+      >
+        <p
+          className="text-xs font-bold uppercase tracking-[0.3em] mb-6"
+          style={{ color: "rgba(255,215,0,0.6)" }}
+        >
+          Your category is
+        </p>
+
+        <h1
+          className="text-5xl sm:text-6xl md:text-7xl font-black uppercase leading-tight mb-10 max-w-2xl"
+          style={{
+            color: "#FFD700",
+            fontFamily: "Impact, 'Arial Black', sans-serif",
+            textShadow: "3px 3px 0px #c8a800",
+          }}
+        >
+          {category.title}
+        </h1>
+
+        {/* Countdown dots */}
+        <div className="flex gap-3">
+          {[3, 2, 1].map((n) => (
+            <div
+              key={n}
+              className="w-4 h-4 rounded-full transition-all duration-300"
+              style={{
+                backgroundColor:
+                  revealCount >= n ? "#FFD700" : "rgba(255,255,255,0.2)",
+                transform: revealCount === n ? "scale(1.4)" : "scale(1)",
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // ─── Loading / Error ─────────────────────────────────────────────────────
 
