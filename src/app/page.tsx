@@ -17,18 +17,41 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  let totalCorrect = 0;
+  let totalAnswered = 0;
+
+  if (user) {
+    const { data: results } = await supabase
+      .from("game_results")
+      .select("correct, total")
+      .eq("user_id", user.id);
+
+    if (results) {
+      totalCorrect = results.reduce((sum, r) => sum + r.correct, 0);
+      totalAnswered = results.reduce((sum, r) => sum + r.total, 0);
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#060CE9" }}>
       {/* Header */}
       <header className="w-full px-6 py-4 flex justify-end">
         {user ? (
           <div className="flex items-center gap-4">
-            <span
-              className="text-sm font-semibold truncate max-w-[200px]"
-              style={{ color: "rgba(255,255,255,0.75)" }}
-            >
-              {user.email}
-            </span>
+            <div className="text-right">
+              <p
+                className="text-sm font-semibold truncate max-w-[200px]"
+                style={{ color: "rgba(255,255,255,0.75)" }}
+              >
+                {user.email}
+              </p>
+              {totalAnswered > 0 && (
+                <p className="text-xs" style={{ color: "rgba(255,215,0,0.8)" }}>
+                  {totalCorrect}/{totalAnswered} correct
+                  {" "}({Math.round((totalCorrect / totalAnswered) * 100)}%)
+                </p>
+              )}
+            </div>
             <LogoutButton />
           </div>
         ) : (
