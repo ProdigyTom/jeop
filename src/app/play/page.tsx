@@ -579,6 +579,21 @@ export default function PlayPage() {
                       Partial match accepted
                     </p>
                   )}
+                  {lastResult.correct && lastResult.matchType === "ordinal" && (
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Ordinal/cardinal match accepted
+                    </p>
+                  )}
+                  {lastResult.correct && lastResult.matchType === "partial_roman" && (
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Accepted — Roman numeral may be omitted
+                    </p>
+                  )}
+                  {lastResult.correct && lastResult.matchType === "multi" && (
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Both parts matched
+                    </p>
+                  )}
                 </div>
               </div>
 
