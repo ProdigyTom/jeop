@@ -29,6 +29,18 @@ const ORDINAL_TO_CARDINAL: Record<string, string> = {
   nineteenth: "nineteen", twentieth: "twenty",
 };
 
+// ─── Number word → digit map ─────────────────────────────────────────────────
+// Normalizes "three doors down" and "3 doors down" to the same form
+const WORD_TO_DIGIT: Record<string, string> = {
+  zero: "0", one: "1", two: "2", three: "3", four: "4",
+  five: "5", six: "6", seven: "7", eight: "8", nine: "9",
+  ten: "10", eleven: "11", twelve: "12", thirteen: "13",
+  fourteen: "14", fifteen: "15", sixteen: "16", seventeen: "17",
+  eighteen: "18", nineteen: "19", twenty: "20",
+  thirty: "30", forty: "40", fifty: "50",
+  hundred: "100", thousand: "1000",
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function decodeHtmlEntities(str: string): string {
@@ -44,9 +56,8 @@ function decodeHtmlEntities(str: string): string {
 export function stripHtml(str: string): string {
   return decodeHtmlEntities(str)
     .replace(/<[^>]+>/g, "")
-    .replace(/\\\\/g, "\\") // \\ → \ must come first
-    .replace(/\\"/g, '"')
-    .replace(/\\'/g, "'");
+    .replace(/\\+"/g, '"')   // any number of backslashes before " → just "
+    .replace(/\\+'/g, "'");  // any number of backslashes before ' → just '
 }
 
 function normalizeAnswer(raw: string): string {
@@ -61,7 +72,10 @@ function normalizeAnswer(raw: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")       // non-alphanumeric → space
     .replace(/\b(a|an|the)\b/g, " ")   // strip articles
-    .replace(/\b\w+\b/g, (w) => ORDINAL_TO_CARDINAL[w] ?? w) // ordinal → cardinal
+    .replace(/\b\w+\b/g, (w) => {                             // ordinal → cardinal → digit
+      const cardinal = ORDINAL_TO_CARDINAL[w];
+      return WORD_TO_DIGIT[cardinal ?? w] ?? cardinal ?? w;
+    })
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -93,13 +107,12 @@ function isRomanNumeral(token: string): boolean {
 function splitMultiPart(rawCorrect: string): string[] | null {
   const stripped = stripHtml(rawCorrect);
 
+  // Only split on "/" — these represent genuine alternative/multi-part answers
+  // (e.g. "Paris/France"). Ampersand is NOT split here because normalizeAnswer
+  // converts & → "and", so "Hootie & the Blowfish" matches correctly via
+  // single-part logic without being incorrectly treated as two separate parts.
   if (stripped.includes("/")) {
     const parts = stripped.split("/").map((s) => s.trim()).filter(Boolean);
-    if (parts.length >= 2) return parts;
-  }
-
-  if (/&/.test(stripped)) {
-    const parts = stripped.split(/\s*&\s*/).map((s) => s.trim()).filter(Boolean);
     if (parts.length >= 2) return parts;
   }
 
@@ -137,15 +150,8 @@ export function checkAnswer(
       return { correct: true, matchType: "multi" };
     }
 
-    // Still allow a very tight fuzzy match on the full concatenated answer
-    const minLen = Math.min(userNorm.length, correctNorm.length);
-    const maxLen = Math.max(userNorm.length, correctNorm.length);
-    if (minLen >= 4) {
-      const dist = levenshtein(userNorm, correctNorm);
-      if (dist / maxLen <= 0.15) return { correct: true, matchType: "fuzzy" };
-    }
-
-    return { correct: false, matchType: "none" };
+    // Fall through to single-part logic — the normalized strings may still
+    // match exactly or via token/fuzzy even when multi-part detection fires.
   }
 
   // ── Single-part matching ───────────────────────────────────────────────────
