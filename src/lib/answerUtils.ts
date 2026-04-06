@@ -44,9 +44,9 @@ function decodeHtmlEntities(str: string): string {
 export function stripHtml(str: string): string {
   return decodeHtmlEntities(str)
     .replace(/<[^>]+>/g, "")
+    .replace(/\\\\/g, "\\") // \\ → \ must come first
     .replace(/\\"/g, '"')
-    .replace(/\\'/g, "'")
-    .replace(/\\\\/g, "\\");
+    .replace(/\\'/g, "'");
 }
 
 function normalizeAnswer(raw: string): string {
