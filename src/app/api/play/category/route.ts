@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { stripHtml } from "@/lib/answerUtils";
 
 export async function GET() {
   try {
@@ -72,11 +73,11 @@ export async function GET() {
 
       return NextResponse.json({
         id: offset,
-        title: categoryName,
+        title: stripHtml(categoryName),
         clues: clues.map((c) => ({
           id: c.id,
-          question: c.answer,  // "answer" in Jeopardy data = clue text shown on board
-          answer: c.question,  // "question" in Jeopardy data = correct response
+          question: stripHtml(c.answer as string),  // "answer" in Jeopardy data = clue text shown on board
+          answer: stripHtml(c.question as string),  // "question" in Jeopardy data = correct response
           value: c.clue_value,
         })),
       });
