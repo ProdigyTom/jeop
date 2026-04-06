@@ -56,14 +56,13 @@ function decodeHtmlEntities(str: string): string {
 export function stripHtml(str: string): string {
   return decodeHtmlEntities(str)
     .replace(/<[^>]+>/g, "")
-    .replace(/\\+"/g, '"')   // any number of backslashes before " → just "
-    .replace(/\\+'/g, "'");  // any number of backslashes before ' → just '
+    .replace(/\\+([^a-zA-Z0-9\s])/g, "$1");  // strip escape backslashes before any special char
 }
 
-function normalizeAnswer(raw: string): string {
+function normalizeAnswer(raw: string, expandParens = false): string {
   return decodeHtmlEntities(raw)
     .replace(/<[^>]+>/g, " ")          // strip HTML tags
-    .replace(/\(.*?\)/g, " ")          // strip parentheticals
+    .replace(/\(([^)]*)\)/g, expandParens ? " $1 " : " ")  // expand or strip parentheticals
     .replace(
       /^(what (is|are|was|were)|who (is|are|was|were)|where (is|are|was|were))\s+/i,
       ""
@@ -140,6 +139,12 @@ export function checkAnswer(
 
   if (!userNorm || !correctNorm) return { correct: false, matchType: "none" };
 
+  // If the correct answer has optional parenthetical content like "(Roger) Ebert",
+  // also try matching against the expanded form "roger ebert" so that users who
+  // include the optional part are still marked correct.
+  const hasParens = /\(/.test(correctAnswer);
+  const correctNormExpanded = hasParens ? normalizeAnswer(correctAnswer, true) : null;
+
   // ── Multi-part answers (e.g. "Paris/France", "Red & Blue") ────────────────
   const parts = splitMultiPart(correctAnswer);
   if (parts) {
@@ -156,11 +161,13 @@ export function checkAnswer(
 
   // ── Single-part matching ───────────────────────────────────────────────────
 
-  // 1. Exact match after normalization
+  // 1. Exact match after normalization (also try expanded form)
   if (userNorm === correctNorm) return { correct: true, matchType: "exact" };
+  if (correctNormExpanded && userNorm === correctNormExpanded) return { correct: true, matchType: "exact" };
 
   const userTokens = userNorm.split(" ").filter(Boolean);
   const correctTokens = correctNorm.split(" ").filter(Boolean);
+  const correctExpandedTokens = correctNormExpanded ? correctNormExpanded.split(" ").filter(Boolean) : correctTokens;
 
   // 2. Roman numeral guard
   //    If the correct answer ends with a Roman numeral (e.g. "Elizabeth I")
@@ -196,9 +203,11 @@ export function checkAnswer(
 
   // 3. Token match — all significant user tokens found in correct tokens
   //    e.g. "kennedy" matches "John F. Kennedy"
+  //    Also check expanded form so "roger ebert" matches "(Roger) Ebert"
   const sigUser = userTokens.filter((t) => t.length > 2);
   const sigCorrect = correctTokens.filter((t) => t.length > 2);
-  if (sigUser.length > 0 && sigUser.every((t) => sigCorrect.includes(t))) {
+  const sigCorrectExpanded = correctExpandedTokens.filter((t) => t.length > 2);
+  if (sigUser.length > 0 && (sigUser.every((t) => sigCorrect.includes(t)) || sigUser.every((t) => sigCorrectExpanded.includes(t)))) {
     // Extra guard: if user included a Roman numeral that's different from
     // correct's last token, we already rejected above. But if correct has
     // NO Roman numeral suffix and user supplied one, that's suspicious —
@@ -207,11 +216,15 @@ export function checkAnswer(
   }
 
   // 4. Fuzzy match — ≤20% edit distance, minimum 4 chars
-  const minLen = Math.min(userNorm.length, correctNorm.length);
-  const maxLen = Math.max(userNorm.length, correctNorm.length);
-  if (minLen >= 4) {
-    const dist = levenshtein(userNorm, correctNorm);
-    if (dist / maxLen <= 0.2) return { correct: true, matchType: "fuzzy" };
+  //    Also try expanded form for cases like "roger ebert" vs "(Roger) Ebert"
+  const candidates = correctNormExpanded ? [correctNorm, correctNormExpanded] : [correctNorm];
+  for (const candidate of candidates) {
+    const minLen = Math.min(userNorm.length, candidate.length);
+    const maxLen = Math.max(userNorm.length, candidate.length);
+    if (minLen >= 4) {
+      const dist = levenshtein(userNorm, candidate);
+      if (dist / maxLen <= 0.2) return { correct: true, matchType: "fuzzy" };
+    }
   }
 
   return { correct: false, matchType: "none" };
