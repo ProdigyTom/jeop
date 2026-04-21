@@ -108,6 +108,22 @@ function isRomanNumeral(token: string): boolean {
   return ROMAN_NUMERALS.has(token);
 }
 
+// True if one string is a prefix of the other (min 4 chars to avoid noise)
+function prefixMatch(a: string, b: string): boolean {
+  if (a === b) return true;
+  const minLen = Math.min(a.length, b.length);
+  if (minLen < 4) return false;
+  return a.startsWith(b) || b.startsWith(a);
+}
+
+// Per-token fuzzy with slightly higher threshold; min length 5 avoids false
+// positives on short words like "ring"/"king" (4 chars).
+function tokenFuzzy(a: string, b: string): boolean {
+  const minLen = Math.min(a.length, b.length);
+  if (minLen < 5) return false;
+  return levenshtein(a, b) / Math.max(a.length, b.length) <= 0.34;
+}
+
 /**
  * Detect multi-part correct answers like "Paris/France" or "Red & Blue".
  * Returns the raw parts (pre-normalization) or null if single-part.
@@ -210,17 +226,27 @@ export function checkAnswer(
     }
   }
 
-  // 3. Token match — all significant user tokens found in correct tokens
-  //    e.g. "kennedy" matches "John F. Kennedy"
-  //    Also check expanded form so "roger ebert" matches "(Roger) Ebert"
+  // 3. Token match — with prefix tolerance and both directions:
+  //    a) all significant user tokens found in correct tokens (user gave subset)
+  //       e.g. "kennedy" matches "John F. Kennedy"
+  //    b) all significant correct tokens found in user tokens (user over-specified)
+  //       e.g. "ring finger" matches "ring", "cloud watching" matches "clouds"
+  //    Prefix tolerance handles stem variants: "cloud" matches "clouds"
   const sigUser = userTokens.filter((t) => t.length > 2);
   const sigCorrect = correctTokens.filter((t) => t.length > 2);
   const sigCorrectExpanded = correctExpandedTokens.filter((t) => t.length > 2);
-  if (sigUser.length > 0 && (sigUser.every((t) => sigCorrect.includes(t)) || sigUser.every((t) => sigCorrectExpanded.includes(t)))) {
-    // Extra guard: if user included a Roman numeral that's different from
-    // correct's last token, we already rejected above. But if correct has
-    // NO Roman numeral suffix and user supplied one, that's suspicious —
-    // allow it only if the numeral is in the correct tokens.
+
+  const forwardMatch = (uToks: string[], cToks: string[]) =>
+    uToks.length > 0 && uToks.every((ut) => cToks.some((ct) => prefixMatch(ut, ct)));
+  const reverseMatch = (cToks: string[], uToks: string[]) =>
+    cToks.length > 0 && cToks.every((ct) => uToks.some((ut) => prefixMatch(ct, ut)));
+
+  if (
+    forwardMatch(sigUser, sigCorrect) ||
+    forwardMatch(sigUser, sigCorrectExpanded) ||
+    reverseMatch(sigCorrect, userTokens) ||
+    reverseMatch(sigCorrectExpanded, userTokens)
+  ) {
     return { correct: true, matchType: "token" };
   }
 
@@ -234,6 +260,16 @@ export function checkAnswer(
       const dist = levenshtein(userNorm, candidate);
       if (dist / maxLen <= 0.2) return { correct: true, matchType: "fuzzy" };
     }
+  }
+
+  // 4b. Per-token fuzzy — catches close variant spellings like "pinky"/"pinkie"
+  //     Each significant correct token must fuzzy-match some user token.
+  //     Uses a slightly higher per-token threshold (34%) gated on min length 5.
+  const tokenFuzzyMatch = (cToks: string[], uToks: string[]) =>
+    cToks.length > 0 && cToks.every((ct) => uToks.some((ut) => tokenFuzzy(ct, ut)));
+
+  if (tokenFuzzyMatch(sigCorrect, userTokens) || tokenFuzzyMatch(sigCorrectExpanded, userTokens)) {
+    return { correct: true, matchType: "fuzzy" };
   }
 
   return { correct: false, matchType: "none" };
