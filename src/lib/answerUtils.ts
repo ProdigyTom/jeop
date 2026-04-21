@@ -50,13 +50,22 @@ function decodeHtmlEntities(str: string): string {
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
-    .replace(/&nbsp;/gi, " ");
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&#92;/gi, "\\");
 }
 
 export function stripHtml(str: string): string {
-  return decodeHtmlEntities(str)
-    .replace(/<[^>]+>/g, "")
-    .replace(/\\+([^a-zA-Z0-9\s])/g, "$1");  // strip escape backslashes before any special char
+  let result = decodeHtmlEntities(str).replace(/<[^>]+>/g, "");
+  
+  // Repeatedly strip escape backslashes until string stabilizes
+  // (handles multiple levels of double-escaping from JSON source)
+  let prev: string;
+  do {
+    prev = result;
+    result = result.replace(/\\+([^a-zA-Z0-9\s])/g, "$1");
+  } while (result !== prev);
+  
+  return result;
 }
 
 function normalizeAnswer(raw: string, expandParens = false): string {
