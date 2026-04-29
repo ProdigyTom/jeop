@@ -189,9 +189,10 @@ function WaitingSpinner({ label }: { label: string }) {
 
 function HostSettingsScreen({ code, settings, onSettingsChange, onCreateLobby }: {
   code: string; settings: MultiplayerSettings;
-  onSettingsChange: (s: MultiplayerSettings) => void; onCreateLobby: (watcher: boolean) => void;
+  onSettingsChange: (s: MultiplayerSettings) => void; onCreateLobby: (watcher: boolean, name: string) => void;
 }) {
   const [watcherMode, setWatcherMode] = useState(false);
+  const [hostName, setHostName] = useState("");
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#060CE9" }}>
       <PageHeader code={code} />
@@ -219,6 +220,21 @@ function HostSettingsScreen({ code, settings, onSettingsChange, onCreateLobby }:
             <ToggleRow label="Watch Mode"
               description="You host from a shared screen without playing."
               value={watcherMode} onChange={setWatcherMode} />
+            {!watcherMode && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2"
+                  style={{ color: "rgba(255,215,0,0.6)" }}>Your Name</p>
+                <input
+                  type="text"
+                  value={hostName}
+                  onChange={(e) => setHostName(e.target.value)}
+                  placeholder="Enter your name…"
+                  maxLength={20}
+                  className="w-full px-4 py-3 rounded text-white text-base placeholder-white/30 outline-none focus:ring-2 focus:ring-yellow-400"
+                  style={{ backgroundColor: "#060CE9", border: "1px solid rgba(255,215,0,0.4)" }}
+                />
+              </div>
+            )}
           </div>
           <div className="mt-4 px-4 py-3 rounded text-xs"
             style={{ backgroundColor: "rgba(255,215,0,0.07)", color: "rgba(255,215,0,0.6)" }}>
@@ -226,8 +242,10 @@ function HostSettingsScreen({ code, settings, onSettingsChange, onCreateLobby }:
             each · {settings.rounds * settings.questionsPerRound} total
             {settings.finalJeopardy ? " + Final Jeopardy" : ""}
           </div>
-          <button onClick={() => onCreateLobby(watcherMode)}
-            className="w-full mt-6 py-4 rounded font-black uppercase text-xl tracking-wide transition-all hover:opacity-90 hover:scale-[1.02] cursor-pointer"
+          <button
+            onClick={() => onCreateLobby(watcherMode, watcherMode ? "Host" : hostName.trim())}
+            disabled={!watcherMode && !hostName.trim()}
+            className="w-full mt-6 py-4 rounded font-black uppercase text-xl tracking-wide transition-all hover:opacity-90 hover:scale-[1.02] disabled:opacity-40 disabled:scale-100 cursor-pointer"
             style={{ backgroundColor: "#FFD700", color: "#060CE9",
               fontFamily: "Impact, 'Arial Black', sans-serif" }}>
             Open Lobby
@@ -1271,10 +1289,10 @@ export default function MultiplayerGamePage({ params }: { params: Promise<{ code
   }, []);
 
   // ── Lobby actions ───────────────────────────────────────────────────────────
-  function handleCreateLobby(watcher: boolean) {
+  function handleCreateLobby(watcher: boolean, name: string) {
     isWatcherRef.current = watcher;
     setIsWatcher(watcher);
-    subscribeToChannel("Host", true, watcher);
+    subscribeToChannel(name, true, watcher);
   }
 
   function handleJoinLobby(e: React.SyntheticEvent) {
