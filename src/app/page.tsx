@@ -112,7 +112,7 @@ export default async function Home() {
         </p>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-16">
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <Link
             href="/play"
             className="px-10 py-4 rounded text-xl font-black uppercase tracking-wide transition-all hover:opacity-90 hover:scale-105 active:scale-95"
@@ -122,7 +122,7 @@ export default async function Home() {
               fontFamily: "Impact, 'Arial Black', sans-serif",
             }}
           >
-            Play Now
+            Play Solo
           </Link>
           {!user && (
             <Link
@@ -133,6 +133,27 @@ export default async function Home() {
               Track Your Score
             </Link>
           )}
+        </div>
+
+        {/* Multiplayer */}
+        <div className="w-full max-w-sm mb-16">
+          <div className="rounded-lg p-6 text-center"
+            style={{ backgroundColor: "#040a9e", border: "2px solid rgba(255,215,0,0.4)" }}>
+            <p className="text-xs font-bold uppercase tracking-widest mb-2"
+              style={{ color: "rgba(255,215,0,0.6)" }}>
+              Multiplayer
+            </p>
+            <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.65)" }}>
+              Compete with friends in real-time — up to 10 players.
+            </p>
+            <Link
+              href="/multiplayer"
+              className="inline-block w-full py-3 rounded font-black uppercase tracking-wide transition-all hover:opacity-90 hover:scale-[1.02] active:scale-95 border-2 text-white"
+              style={{ borderColor: "#FFD700", fontFamily: "Impact, 'Arial Black', sans-serif" }}
+            >
+              Play Together
+            </Link>
+          </div>
         </div>
 
         {/* Feature callout */}
