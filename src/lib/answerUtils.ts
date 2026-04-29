@@ -116,12 +116,15 @@ function prefixMatch(a: string, b: string): boolean {
   return a.startsWith(b) || b.startsWith(a);
 }
 
-// Per-token fuzzy with slightly higher threshold; min length 5 avoids false
-// positives on short words like "ring"/"king" (4 chars).
+// Per-token fuzzy: min length 5 avoids false positives on short words like
+// "ring"/"king" (4 chars). Hard cap of 2 edits prevents long-word prefix
+// mismatches (e.g. "negronesia" vs "micronesia" = 3 edits) from slipping
+// through even when the ratio looks acceptable.
 function tokenFuzzy(a: string, b: string): boolean {
   const minLen = Math.min(a.length, b.length);
   if (minLen < 5) return false;
-  return levenshtein(a, b) / Math.max(a.length, b.length) <= 0.34;
+  const dist = levenshtein(a, b);
+  return dist <= 2 && dist / Math.max(a.length, b.length) <= 0.34;
 }
 
 /**
