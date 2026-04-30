@@ -480,14 +480,16 @@ function QuestionScreen({ clue, round, questionIndex, totalQuestions, startTime,
         <div className="w-full max-w-xl flex flex-col gap-5">
           <TimerBar startTime={startTime} totalMs={QUESTION_TIME_MS} />
 
-          <div>
-            <h2 className="text-center text-2xl sm:text-3xl font-black uppercase mb-3"
-              style={{ color: "#FFD700", fontFamily: "Impact, 'Arial Black', sans-serif",
-                letterSpacing: "0.05em" }}>
-              {clue.category}
-            </h2>
-            <div className="rounded-lg p-8 text-center flex flex-col items-center justify-center"
-              style={{ backgroundColor: "#040a9e", border: "2px solid #FFD700", minHeight: "200px" }}>
+          <div className="rounded-lg text-center flex flex-col items-center justify-center"
+            style={{ backgroundColor: "#040a9e", border: "2px solid #FFD700", minHeight: "200px" }}>
+            <div className="w-full px-6 pt-5 pb-3 border-b" style={{ borderColor: "rgba(255,215,0,0.3)" }}>
+              <h2 className="text-xl sm:text-2xl font-black uppercase"
+                style={{ color: "#FFD700", fontFamily: "Impact, 'Arial Black', sans-serif",
+                  letterSpacing: "0.05em" }}>
+                {clue.category}
+              </h2>
+            </div>
+            <div className="px-8 py-6 flex-1 flex items-center justify-center">
               <p className="text-white text-lg leading-relaxed">{clue.question}</p>
             </div>
           </div>
@@ -581,8 +583,8 @@ function QuestionResultsScreen({ clue, answers, gamePlayers, isHost, onNext, nex
                   <span className="text-xl flex-shrink-0">{a.correct ? "✓" : "✗"}</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm text-white truncate">{player.name}</p>
-                    <p className="text-xs mt-0.5 truncate"
-                      style={{ color: a.correct ? "rgba(134,239,172,0.8)" : "rgba(255,255,255,0.4)" }}>
+                    <p className="text-sm mt-0.5 truncate"
+                      style={{ color: a.correct ? "rgba(134,239,172,0.9)" : "rgba(255,255,255,0.75)" }}>
                       {a.answer || <em>no answer</em>}
                     </p>
                   </div>
