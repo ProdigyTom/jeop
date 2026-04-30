@@ -240,7 +240,7 @@ export function checkAnswer(
   const sigCorrectExpanded = correctExpandedTokens.filter((t) => t.length > 2);
 
   const forwardMatch = (uToks: string[], cToks: string[]) =>
-    uToks.length > 0 && uToks.every((ut) => cToks.some((ct) => prefixMatch(ut, ct)));
+    uToks.length > 0 && uToks.every((ut) => cToks.some((ct) => prefixMatch(ut, ct) || tokenFuzzy(ut, ct)));
   const reverseMatch = (cToks: string[], uToks: string[]) =>
     cToks.length > 0 && cToks.every((ct) => uToks.some((ut) => prefixMatch(ct, ut)));
 
