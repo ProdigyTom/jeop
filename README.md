@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Jeopardy!
+
+A Jeopardy! practice app built with Next.js, powered by thousands of real archive questions.
+
+## Features
+
+- **Solo play** — pick a category and answer questions one at a time with immediate feedback
+- **Score tracking** — sign in to track your correct/total ratio across sessions
+- **Multiplayer** — compete with up to 10 players in real-time (no account required)
+- **Smart answer matching** — handles misspellings, articles, Jeopardy phrasing, ordinals, Roman numerals, and partial answers
+
+## Multiplayer
+
+Create a game and share the 6-character code (or QR code) with friends. Up to 10 players can join anonymously — no login needed.
+
+**Game settings (host configures before starting):**
+- 1–5 rounds
+- 3–10 questions per round
+- Final Jeopardy on/off
+- Watch mode — host spectates instead of playing
+
+**Scoring** — full value for answers within 10 seconds, decaying to 25% minimum by 30 seconds.
+
+**Flow:**
+1. Host creates game → players join via code
+2. Each round: questions revealed one at a time, all players answer simultaneously
+3. Per-question results shown after each answer phase
+4. Leaderboard shown between rounds
+5. Optional Final Jeopardy: 20s wager phase → 60s question phase → reveal
+
+Players who disconnect miss those questions (scored as wrong) but can rejoin and continue.
+
+## Stack
+
+- **Framework**: Next.js 16 (App Router, TypeScript)
+- **Styling**: Tailwind CSS v4
+- **Database / Auth**: Supabase (Postgres + Realtime Broadcast)
+- **Hosting**: Vercel
+- **Questions**: J! Archive via internal Supabase `clues` table
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy `.env.example` to `.env.local` and fill in your Supabase project URL and anon key.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
