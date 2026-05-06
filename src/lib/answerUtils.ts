@@ -41,6 +41,26 @@ const WORD_TO_DIGIT: Record<string, string> = {
   hundred: "100", thousand: "1000",
 };
 
+// ─── Common abbreviations / short forms ──────────────────────────────────────
+// Applied after normalization so punctuation is already stripped
+// (e.g. "U.K." → "uk" → "united kingdom"). Both sides expand, so
+// "UK" and "United Kingdom" both normalize to the same string.
+const ABBREVIATIONS: Record<string, string> = {
+  // Countries
+  uk:   "united kingdom",
+  us:   "united states",
+  usa:  "united states",
+  uae:  "united arab emirates",
+  ussr: "soviet union",
+  eu:   "european union",
+  nz:   "new zealand",
+  // Canadian provinces (common Jeopardy fodder)
+  bc:   "british columbia",
+  pei:  "prince edward island",
+  // Cities
+  nyc:  "new york city",
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function decodeHtmlEntities(str: string): string {
@@ -84,6 +104,7 @@ function normalizeAnswer(raw: string, expandParens = false): string {
       const cardinal = ORDINAL_TO_CARDINAL[w];
       return WORD_TO_DIGIT[cardinal ?? w] ?? cardinal ?? w;
     })
+    .replace(/\b\w+\b/g, (w) => ABBREVIATIONS[w] ?? w)       // expand abbreviations
     .replace(/\s+/g, " ")
     .trim();
 }
